@@ -44,7 +44,8 @@ def read_dataset(use_valid):
     if use_valid:
         train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'valid'), transform=trans_train)
     else:
-        train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'train'), transform=trans_train)
+        # train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'train'), transform=trans_train)
+        train_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'train'), transform=trans_train)
     test_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'test'), transform=trans_test)
 
     return train_set, test_set

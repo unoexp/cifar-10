@@ -1,9 +1,6 @@
-import pickle
-
 import torch
 import data_utiles
 from torch import nn
-import pandas as pd
 from models import resnet18
 
 
@@ -37,21 +34,8 @@ def run(hps):
         print(f'epoch:{epoch}, loss:{ls}, acc:{acc}')
         scheduler.step()
         if epoch % 10 == 0:
-            with open('checkpoint' + str(epoch) + '.pkl', 'wb+') as f:
-                pickle.dump(net.state_dict(), f)
-    net.eval()
-    res = []
-    for i, (img, _) in enumerate(test_iter):
-        predict = net(img.to(0))
-        res.extend(predict.argmax(dim=1).type(torch.int32).cpu().numpy())
-        if i == 100:
-            break
-    s_ids = list(range(1, 101 * 128 + 1))
-    s_ids.sort(key=lambda x: str(x))
-    print(len(s_ids), len(res))
-    df = pd.DataFrame({'id': s_ids, 'label': res})
-    df['label'] = df['label'].apply(lambda x: train_dataset.classes[x])
-    df.to_csv('submission.csv', index=False)
+            torch.save(net, 'checkpoint' + str(epoch) + '.pt')
+
 
 def train_epoch(net, train_iter, trainer, loss):
     net.train()
