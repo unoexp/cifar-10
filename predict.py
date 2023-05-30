@@ -22,9 +22,7 @@ def predict_test(test_iter, net, train_dataset):
     for i, (img, _) in enumerate(test_iter):
         predict = net(img.to(0))
         res.extend(predict.argmax(dim=1).type(torch.int32).cpu().numpy())
-        if i == 100:
-            break
-    s_ids = list(range(1, 101*128 + 1))
+    s_ids = list(range(1, len(res) + 1))
     s_ids.sort(key=lambda x: str(x))
     df = pd.DataFrame({'id': s_ids, 'label': res})
     df['label'] = df['label'].apply(lambda x: train_dataset.classes[x])
