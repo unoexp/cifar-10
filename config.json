@@ -1,6 +1,6 @@
 {
   "train": {
-    "max_epochs": 50,
+    "max_epochs": 100,
     "batch_size": 128,
     "lr_rate": 2e-4,
     "lr_period": 5,
@@ -14,6 +14,7 @@
     "test_set": "S:\\dataset\\cifar-10\\test"
   },
   "model": {
-    "num_classes": 10
+    "num_classes": 10,
+    "save_interval": 10
   }
 }

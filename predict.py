@@ -4,13 +4,18 @@ import pandas as pd
 import data_utiles
 from torch import nn
 import torch
+from models import resnet18
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', type=str, required=True)
     args = parser.parse_args()
-    net = torch.load(args.model)
+
+    net = resnet18(10, 3)
+    state_dict = torch.load(args.model)
+    net.load_state_dict(state_dict['model'])
+
     net = nn.DataParallel(net, [0]).to(0)
     train_iter, test_iter, train_dataset = data_utiles.get_dataset(128, 0.8, 0)
     predict_test(test_iter, net, train_dataset)
