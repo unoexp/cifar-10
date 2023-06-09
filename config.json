@@ -1,10 +1,10 @@
 {
   "train": {
     "max_epochs": 100,
-    "batch_size": 128,
-    "lr_rate": 2e-4,
+    "batch_size": 64,
+    "lr_rate": 2e-3,
     "lr_period": 5,
-    "lr_decay": 0.9,
+    "lr_decay": 0.6,
     "weight_decay": 5e-8
   },
   "data": {

@@ -4,7 +4,7 @@ import pandas as pd
 import data_utiles
 from torch import nn
 import torch
-from models import resnet18
+from models import resnet34
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
     parser.add_argument('-m', '--model', type=str, required=True)
     args = parser.parse_args()
 
-    net = resnet18(10, 3)
+    net = resnet34(3, 10)
     state_dict = torch.load(args.model)
     net.load_state_dict(state_dict['model'])
 

@@ -23,30 +23,39 @@ def read_csv_labels(filename):
     return dict((idx, label) for idx, label in lines)
 
 
+def img_normalize(data):
+    means = []
+    stds = []
+    for X, _ in data:
+        means.append(X.mean(dim=(0, 2, 3)))
+        stds.append(X.std(dim=(0, 2, 3)))
+
+    mean = torch.stack(means, dim=0).mean(dim=0)
+    std = torch.stack(stds, dim=0).mean(dim=0)
+    return mean, std
+
+
 def read_dataset(use_valid):
-    trans_train = torchvision.transforms.Compose([
-        # 在⾼度和宽度上将图像放⼤到40像素的正⽅形
-        torchvision.transforms.Resize(40),
-        # 随机裁剪出⼀个⾼度和宽度均为40像素的正⽅形图像，
-        # ⽣成⼀个⾯积为原始图像⾯积0.64到1倍的⼩正⽅形，
-        # 然后将其缩放为⾼度和宽度均为32像素的正⽅形
-        torchvision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0),
-                                                 ratio=(1.0, 1.0)),
-        torchvision.transforms.RandomHorizontalFlip(),
+    mean, std = [0.4914, 0.4822, 0.4465], [0.247, 0.243, 0.261]
+    train_trans = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((224, 224)),
+        # 自动数据增强
+        torchvision.transforms.AutoAugment(policy=torchvision.transforms.AutoAugmentPolicy.CIFAR10),
         torchvision.transforms.ToTensor(),
-        # 标准化图像的每个通道
-        torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465],
-                                         [0.2023, 0.1994, 0.2010])])
-    trans_test = torchvision.transforms.Compose([
+        torchvision.transforms.Normalize(mean, std)
+    ])
+    test_trans = torchvision.transforms.Compose([
+        torchvision.transforms.Resize((32, 32)),
         torchvision.transforms.ToTensor(),
-        torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465],
-                                         [0.2023, 0.1994, 0.2010])])
+        torchvision.transforms.Normalize(mean, std)
+    ])
+
     if use_valid:
-        train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'valid'), transform=trans_train)
+        train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'valid'), transform=train_trans)
     else:
-        # train_set = torchvision.datasets.ImageFolder(os.path.join('dataset', 'data', 'train'), transform=trans_train)
-        train_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'train'), transform=trans_train)
-    test_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'test'), transform=trans_test)
+        train_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'train'), transform=train_trans)
+
+    test_set = torchvision.datasets.ImageFolder(os.path.join('S:', 'dataset', 'cifar-10', 'test'), transform=test_trans)
 
     return train_set, test_set
 
@@ -102,6 +111,7 @@ def get_dataset(batch_size, valid_ratio, use_valid):
     train_iter = torch.utils.data.DataLoader(train_dataset, batch_size, shuffle=True, drop_last=True)
     # test_iter = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=False, drop_last=True)
     test_iter = torch.utils.data.DataLoader(test_dataset, batch_size, shuffle=False, drop_last=False)
+
     return train_iter, test_iter, train_dataset
 
 
