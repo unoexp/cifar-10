@@ -1,3 +1,4 @@
+import torch.nn.functional
 from torch import nn
 from torch.nn import functional as F
 
@@ -5,20 +6,21 @@ from torch.nn import functional as F
 class Residual(nn.Module):
     """The Residual block of ResNet."""
 
-    def __init__(self, input_channels, num_channels,
+    def __init__(self, input_channels, output_channels,
                  use_1x1conv=False):
-        super().__init__()
-        self.conv1 = nn.Conv2d(input_channels, num_channels,
-                               kernel_size=3, padding=1, stride=2, bias=False)
-        self.conv2 = nn.Conv2d(num_channels, num_channels,
-                               kernel_size=3, padding=1, stride=1, bias=False)
+        super(Residual, self).__init__()
+        self.conv1 = nn.Conv2d(input_channels, output_channels,
+                               kernel_size=3, stride=2 if use_1x1conv else 1, padding=1, bias=False)
+        self.conv2 = nn.Conv2d(output_channels, output_channels,
+                               kernel_size=3, stride=1, padding=1, bias=False)
         if use_1x1conv:
-            self.conv3 = nn.Conv2d(input_channels, num_channels,
+            self.conv3 = nn.Conv2d(input_channels, output_channels,
                                    kernel_size=1, stride=2, padding=0, bias=False)
         else:
             self.conv3 = None
-        self.bn1 = nn.BatchNorm2d(num_channels)
-        self.bn2 = nn.BatchNorm2d(num_channels)
+        self.bn1 = nn.BatchNorm2d(output_channels)
+        self.bn2 = nn.BatchNorm2d(output_channels)
+        
 
     def forward(self, X):
         Y = F.relu(self.bn1(self.conv1(X)))
@@ -48,7 +50,7 @@ class resnet34(nn.Module):
             Residual(128, 128),
             Residual(128, 128)
         )
-        self.conv3 = nn.Sequential(
+        self.conv4 = nn.Sequential(
             Residual(128, 256, use_1x1conv=True),
             Residual(256, 256),
             Residual(256, 256),
@@ -72,7 +74,7 @@ class resnet34(nn.Module):
         x = self.conv4(x)
         x = self.conv5(x)
         x = self.GAP(x)
-        # x = x.view(x.size(0), -1)
+        x = x.view(x.size(0), -1)
         x = self.fc(x)
         return x
 

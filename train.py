@@ -1,9 +1,14 @@
 import argparse
+import time
 
 import torch
 import data_utiles
 from torch import nn
+
+from data_init import data_init
 from models import resnet34
+import config
+import matplotlib.pyplot as plt
 
 
 def main():
@@ -11,11 +16,8 @@ def main():
     parser.add_argument('-m', '--model', type=str, default=None)
     args = parser.parse_args()
     assert torch.cuda.is_available() is True
-    hps = data_utiles.read_params('config.json')
-    if args.model is None:
-        run(hps)
-    else:
-        run(hps, args.model)
+    hps = config.read_params('config.json')
+    run(hps, args.model)
 
 
 def run(hps, model=None):
@@ -29,11 +31,16 @@ def run(hps, model=None):
 
     num_classes = hps.model.num_classes
     save_interval = hps.model.save_interval
+    paths = [hps.data.valid_set, hps.data.train_set, hps.data.test_set]
 
-    train_iter, test_iter, train_dataset = data_utiles.get_dataset(batch_size, valid_ratio, use_valid)
-    net = resnet34(3, num_classes)
-    loss = nn.CrossEntropyLoss(reduction="none")
-    trainer = torch.optim.SGD(net.parameters(), lr=lr, momentum=0.9, weight_decay=wd)
+    # data_init(valid_ratio)
+    train_iter, test_iter, train_dataset = \
+        data_utiles.get_dataset(batch_size, use_valid, paths)
+    net = resnet34(3, num_classes).cuda()
+    net.init_weights()
+
+    loss = nn.CrossEntropyLoss(reduction='none').cuda()
+    trainer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=wd)
     scheduler = torch.optim.lr_scheduler.StepLR(trainer, lr_period, lr_decay)
     start_epoch = 0
     if model is not None:
@@ -44,13 +51,16 @@ def run(hps, model=None):
         scheduler.load_state_dict(state_dict['scheduler'])
         loss.load_state_dict(state_dict['loss'])
 
-    net = net.to('cuda:0')
-
+    x1, y1, y2 = [], [], []
     for epoch in range(start_epoch, max_epochs):
+        start_time = time.time()
         ls, acc = train_epoch(net, train_iter, trainer, loss)
-        print(f'epoch:{epoch}, loss:{ls}, acc:{acc}')
+        x1.append(epoch)
+        y1.append(ls.detach().cpu().numpy())
+        y2.append(acc.detach().cpu().numpy())
+        print(f'epoch:{epoch}, loss:{ls}, acc:{acc}, time:{time.time() - start_time}')
         scheduler.step()
-        if epoch % save_interval == 0:
+        if epoch % save_interval == 0 or epoch == max_epochs - 1:
             torch.save({
                 'epoch': epoch,
                 'model': net.state_dict(),
@@ -58,6 +68,10 @@ def run(hps, model=None):
                 'loss': loss.state_dict(),
                 'scheduler': scheduler.state_dict()
             }, 'check_point_' + str(epoch) + '.pth')
+    plt.plot(x1, y1, x1, y2)
+    plt.legend(['loss', 'acc'])
+    plt.show()
+    pass
 
 
 def train_epoch(net, train_iter, trainer, loss):
@@ -67,7 +81,6 @@ def train_epoch(net, train_iter, trainer, loss):
     for i, (img, label) in enumerate(train_iter):
         img = img.to(0)
         label = label.to(0)
-
         trainer.zero_grad()
         predict = net(img)
         l = loss(predict, label)

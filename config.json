@@ -1,15 +1,16 @@
 {
   "train": {
-    "max_epochs": 100,
+    "max_epochs": 80,
     "batch_size": 64,
-    "lr_rate": 2e-3,
-    "lr_period": 5,
+    "lr_rate": 1e-3,
+    "lr_period": 3,
     "lr_decay": 0.6,
     "weight_decay": 5e-8
   },
   "data": {
     "use_valid": 0,
     "valid_ratio": 0.1,
+    "valid_set": "F:\\repo\\cifar-10\\dataset\\data\\valid",
     "train_set": "S:\\dataset\\cifar-10\\train",
     "test_set": "S:\\dataset\\cifar-10\\test"
   },

@@ -1,8 +1,8 @@
 import argparse
 import pandas as pd
 
+import config
 import data_utiles
-from torch import nn
 import torch
 from models import resnet34
 
@@ -15,9 +15,12 @@ def main():
     net = resnet34(3, 10)
     state_dict = torch.load(args.model)
     net.load_state_dict(state_dict['model'])
+    hps = config.read_params('config.json')
+    paths = [hps.data.valid_set, hps.data.train_set, hps.data.test_set]
+    batch_size = hps.train.batch_size
 
-    net = nn.DataParallel(net, [0]).to(0)
-    train_iter, test_iter, train_dataset = data_utiles.get_dataset(128, 0.8, 0)
+    net = net.to('cuda:0')
+    train_iter, test_iter, train_dataset = data_utiles.get_dataset(batch_size, 0, paths)
     predict_test(test_iter, net, train_dataset)
 
 
